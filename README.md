@@ -46,7 +46,7 @@ sudo apt install -y git cmake build-essential libsdl2-dev \
 ### Python package
 
 ```bash
-git clone https://github.com/OpenGoalRL/OpenGoalRL.git
+git clone https://github.com/Arahan-kujur/OpenGoalRL.git
 cd OpenGoalRL
 pip install -e ".[dev]"
 ```

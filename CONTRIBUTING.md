@@ -5,7 +5,7 @@ Thanks for your interest in contributing. This document covers the basics for ge
 ## Setup
 
 ```bash
-git clone https://github.com/OpenGoalRL/OpenGoalRL.git
+git clone https://github.com/Arahan-kujur/OpenGoalRL.git
 cd OpenGoalRL
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
