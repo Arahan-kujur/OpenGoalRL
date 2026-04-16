@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "opengoalrl"
+version = "0.2.0"
+description = "Scenario-based reinforcement learning toolkit for Google Research Football"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = [
+    "gfootball>=2.10",
+    "gymnasium>=0.29",
+    "stable-baselines3>=2.1",
+    "pyyaml>=6.0",
+    "numpy>=1.23,<2.0",
+    "torch>=2.0",
+    "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+opengoalrl-train = "opengoalrl.scripts.train:main"
+opengoalrl-eval = "opengoalrl.scripts.evaluate:main"
+opengoalrl-baseline = "opengoalrl.scripts.baseline:main"
+opengoalrl-curriculum = "opengoalrl.scripts.curriculum_train:main"
+
+[tool.setuptools.packages.find]
+include = ["opengoalrl*"]
+
+[tool.pytest.ini_options]
+testpaths = ["opengoalrl/tests"]

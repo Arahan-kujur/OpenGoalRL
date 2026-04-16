@@ -1,0 +1,32 @@
+environment:
+  scenario: "run_to_score"
+  max_steps: 400
+  render: false
+
+rewards:
+  - type: "goal"
+    weight: 10.0
+  - type: "distance_to_goal"
+    weight: 1.0
+  - type: "shot"
+    weight: 2.0
+  - type: "ball_in_box"
+    weight: 0.5
+
+training:
+  algorithm: "ppo"
+  total_timesteps: 200000
+  learning_rate: 0.0003
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  clip_range: 0.2
+  seed: 42
+
+evaluation:
+  n_episodes: 20
+
+logging:
+  log_dir: "logs/"
+  save_dir: "models/run_to_score/"

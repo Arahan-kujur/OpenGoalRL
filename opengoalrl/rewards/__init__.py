@@ -1,0 +1,5 @@
+from opengoalrl.rewards.base_reward import RewardComponent
+from opengoalrl.rewards.ball_position_reward import BallInBoxReward
+from opengoalrl.rewards.shot_reward import ShotReward
+from opengoalrl.rewards.goal_reward import GoalReward
+from opengoalrl.rewards.distance_reward import DistanceToGoalReward

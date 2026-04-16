@@ -1,0 +1,9 @@
+gfootball==2.10.2
+gym==0.26.2
+gymnasium==1.2.3
+stable-baselines3==2.8.0
+pyyaml>=6.0
+numpy>=1.23,<2.0
+torch>=2.0
+matplotlib>=3.7
+pytest>=7.0

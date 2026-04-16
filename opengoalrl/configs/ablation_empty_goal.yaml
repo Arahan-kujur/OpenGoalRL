@@ -1,0 +1,50 @@
+environment:
+  scenario: "empty_goal"
+  max_steps: 300
+  render: false
+
+training:
+  algorithm: "ppo"
+  total_timesteps: 100000
+  learning_rate: 0.0003
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  clip_range: 0.2
+  seed: 42
+
+ablation:
+  variants:
+    shaped:
+      label: "Full shaped reward"
+      rewards:
+        - type: "goal"
+          weight: 10.0
+        - type: "distance_to_goal"
+          weight: 1.0
+        - type: "shot"
+          weight: 2.0
+        - type: "ball_in_box"
+          weight: 0.5
+    scoring_only:
+      label: "Scoring only"
+      rewards:
+        - type: "goal"
+          weight: 1.0
+    dense_only:
+      label: "Dense only (no goal)"
+      rewards:
+        - type: "distance_to_goal"
+          weight: 1.0
+        - type: "shot"
+          weight: 2.0
+        - type: "ball_in_box"
+          weight: 0.5
+
+evaluation:
+  n_episodes: 20
+
+logging:
+  log_dir: "logs/"
+  save_dir: "models/ablation/"

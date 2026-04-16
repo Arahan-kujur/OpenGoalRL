@@ -1,0 +1,44 @@
+rewards:
+  - type: "goal"
+    weight: 10.0
+  - type: "distance_to_goal"
+    weight: 1.0
+  - type: "shot"
+    weight: 2.0
+  - type: "ball_in_box"
+    weight: 0.5
+
+training:
+  algorithm: "ppo"
+  learning_rate: 0.0003
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  clip_range: 0.2
+  seed: 42
+
+curriculum:
+  stages:
+    - scenario: "empty_goal_close"
+      max_steps: 200
+      timesteps: 50000
+    - scenario: "empty_goal"
+      max_steps: 300
+      timesteps: 100000
+    - scenario: "run_to_score"
+      max_steps: 400
+      timesteps: 150000
+    - scenario: "pass_and_shoot"
+      max_steps: 400
+      timesteps: 150000
+    - scenario: "corner_kick"
+      max_steps: 400
+      timesteps: 200000
+
+evaluation:
+  n_episodes: 20
+
+logging:
+  log_dir: "logs/"
+  save_dir: "models/curriculum/"
