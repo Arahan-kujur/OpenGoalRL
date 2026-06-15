@@ -1,0 +1,61 @@
+site_name: OpenGoalRL
+site_description: Scenario-based reinforcement learning toolkit for Google Research Football
+site_url: https://Arahan-kujur.github.io/OpenGoalRL/
+repo_name: Arahan-kujur/OpenGoalRL
+repo_url: https://github.com/Arahan-kujur/OpenGoalRL
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: green
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: installation.md
+      - Quickstart: quickstart.md
+      - Reproduce: reproduce.md
+  - Concepts:
+      - Scenarios: scenarios.md
+      - Curriculum: curriculum.md
+      - Auto Curriculum: auto-curriculum.md
+      - Metrics: metrics.md
+      - Diagnostics: diagnostics.md
+      - Reports: reports.md
+      - Coach: coach.md
+      - Multi-Agent: multi-agent.md
+  - Reference:
+      - CLI: cli.md
+      - Benchmarks: benchmarks.md
+      - Extending: extending.md

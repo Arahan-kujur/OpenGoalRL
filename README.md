@@ -1,5 +1,8 @@
 # OpenGoalRL
 
+[![CI](https://github.com/Arahan-kujur/OpenGoalRL/actions/workflows/ci.yml/badge.svg)](https://github.com/Arahan-kujur/OpenGoalRL/actions/workflows/ci.yml)
+[![Docs](https://github.com/Arahan-kujur/OpenGoalRL/actions/workflows/docs.yml/badge.svg)](https://Arahan-kujur.github.io/OpenGoalRL/)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Arahan-kujur/OpenGoalRL/blob/main/notebooks/quickstart.ipynb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 
@@ -16,6 +19,14 @@ OpenGoalRL decomposes football into structured, repeatable scenarios -- corner k
 - **Parallel environments** via `SubprocVecEnv` for faster training
 - **PPO training** via stable-baselines3, fully configurable through YAML
 - **Built-in experiment pipeline** -- train, evaluate, baseline, ablation, and plotting
+- **Procedural scenario generator** -- structured `scenario_spec` YAML alongside fixed academy scenarios
+- **Tactical metrics** -- football-native measurements (xG proxy, progression, possession) separate from rewards
+- **Failure diagnostics** -- rule-based classifiers over evaluated trajectories
+- **Research reports** -- Markdown/HTML aggregation from CSVs, configs, and diagnosis JSON
+- **Skill-graph curricula** -- graph-based prerequisites alongside linear stage lists
+- **Auto curriculum discovery** -- probe-based stage selection for a target scenario
+- **LLM coach (offline-first)** -- structured coaching from diagnostics and trajectory summaries
+- **Multi-agent training path** -- separate 3v3 (and extensible) parameter-sharing PPO via `opengoalrl-train-ma`
 - **GRF-free test suite** -- unit tests run without installing the football engine
 
 ## Scenarios
@@ -77,6 +88,91 @@ python -m opengoalrl.scripts.plot_results
 
 ```bash
 pytest opengoalrl/tests/ -v -k "not test_env"
+```
+
+## Reproduce Our Benchmarks
+
+Three ways to reproduce a number from this README, fastest first:
+
+- **Colab (zero setup):** open the [quickstart notebook](https://colab.research.google.com/github/Arahan-kujur/OpenGoalRL/blob/main/notebooks/quickstart.ipynb) and run all cells.
+- **Docker (reproducible Linux env):** `make docker-build && make docker-train` (bundles all GRF system deps).
+- **Native benchmark harness:**
+
+```bash
+python benchmarks/run_benchmarks.py --seeds 3 && python benchmarks/aggregate.py
+```
+
+This writes `benchmarks/results/summary.csv` with mean scoring rate and 95%
+confidence intervals across seeds. See [`benchmarks/README.md`](benchmarks/README.md)
+for the schema and the [docs site](https://Arahan-kujur.github.io/OpenGoalRL/reproduce/)
+for the full under-10-minutes path.
+
+Skip training entirely with a pretrained checkpoint:
+
+```bash
+opengoalrl-download-models --scenario empty_goal_close
+```
+
+See the [Model Zoo](MODEL_ZOO.md) for the full checkpoint table.
+
+## Documentation
+
+Full documentation (MkDocs Material) is published at
+**<https://Arahan-kujur.github.io/OpenGoalRL/>**. Build it locally with:
+
+```bash
+pip install -e ".[docs]"
+mkdocs build --strict   # or: mkdocs serve
+```
+
+## Research Roadmap Features
+
+### Procedural scenarios
+
+```bash
+opengoalrl-generate-scenario --config opengoalrl/configs/generated_corner.yaml
+```
+
+Use `scenario_spec` in YAML instead of a fixed `scenario` name, or keep existing configs unchanged.
+
+### Tactical evaluation
+
+```bash
+opengoalrl-eval --config opengoalrl/configs/corner.yaml --metrics tactical
+```
+
+### Failure diagnosis
+
+```bash
+opengoalrl-diagnose models/curriculum/stage_5_corner_kick --config opengoalrl/configs/corner.yaml
+```
+
+### Research reports
+
+```bash
+opengoalrl-report models/curriculum/ --format markdown
+```
+
+### Skill-graph curriculum
+
+Use `opengoalrl/configs/skill_graph.yaml` with `curriculum.skill_graph.nodes` instead of a linear `stages` list.
+
+### Auto curriculum discovery
+
+```bash
+opengoalrl-auto-curriculum --target corner_kick --budget 20
+```
+
+### Offline coaching
+
+```bash
+opengoalrl-coach experiment/episode_042.json
+```
+
+### Multi-agent training
+
+```bash
+opengoalrl-train-ma --config opengoalrl/configs/ma_3v3.yaml
 ```
 
 ## Curriculum Learning
@@ -184,15 +280,29 @@ opengoalrl/
 |-- agents/
 |   +-- ppo_agent.py          # SB3 PPO wrapper with save/load
 |-- configs/                  # YAML configs for each scenario + curriculum + ablation
+|-- scenarios/                # Structured specs + procedural generator
+|-- metrics/                  # Tactical metrics (separate from rewards)
+|-- diagnostics/              # Rule-based failure classifiers
+|-- reports/                  # Experiment report builder
+|-- curriculum/               # Skill graphs + auto-discovery
+|-- coach/                    # Offline/LLM coaching from diagnostics
 |-- scripts/
 |   |-- train.py              # Single-scenario training
+|   |-- train_ma.py           # Multi-agent parameter-sharing training
 |   |-- evaluate.py           # Model evaluation with metrics
 |   |-- baseline.py           # Random-action baseline
 |   |-- curriculum_train.py   # Sequential curriculum trainer
+|   |-- generate_scenario.py  # Procedural scenario preview/export
+|   |-- diagnose.py           # Failure diagnosis CLI
+|   |-- report.py             # Research report generation
+|   |-- auto_curriculum.py    # Automatic curriculum discovery
+|   |-- coach.py              # Coaching explanations
 |   |-- ablation.py           # Reward ablation experiment
 |   +-- plot_results.py       # Learning curves + comparison + ablation plots
 |-- utils/
 |   |-- config_loader.py      # YAML loading + reward registry
+|   |-- config_validation.py  # Config section validation
+|   |-- rollout.py            # Shared rollout/eval utilities
 |   |-- logger.py             # Structured logging + config snapshots
 |   +-- metrics_callback.py   # SB3 callback for CSV metrics
 +-- tests/
@@ -206,7 +316,8 @@ opengoalrl/
 
 - **GRF engine seeding:** The GRF C++ engine has no seed parameter. NumPy/PyTorch/Python seeds are controlled, but GRF's internal physics are not fully deterministic across runs.
 - **Gym deprecation warning:** GRF depends on the unmaintained `gym` package. OpenGoalRL patches the API mismatch at runtime via `_patch_grf_api()`. This is transparent to users but may need updating if gym or gfootball release new versions.
-- **Single-agent only:** All scenarios control one player. Multi-agent support is planned for a future release.
+- **Multi-agent maturity:** `opengoalrl-train-ma` provides a separate parameter-sharing path; full PettingZoo/MAPPO integration is not yet included.
+- **Procedural GRF limits:** `scenario_spec` maps to the nearest academy scenario; true custom player/ball placement requires deeper GRF integration.
 
 ## License
 

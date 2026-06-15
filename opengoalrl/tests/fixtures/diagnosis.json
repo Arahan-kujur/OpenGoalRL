@@ -1,0 +1,12 @@
+{
+  "scoring_rate": 33.3,
+  "n_episodes": 3,
+  "failures": {
+    "lost_possession": 50.0,
+    "no_shot_generated": 50.0
+  },
+  "failure_counts": {
+    "lost_possession": 1,
+    "no_shot_generated": 1
+  }
+}

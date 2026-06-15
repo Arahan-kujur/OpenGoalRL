@@ -1,0 +1,3 @@
+scenario,algorithm,seeds,timesteps,scoring_rate_mean,scoring_rate_ci,mean_reward,sample_efficiency
+empty_goal_close,ppo,3,50000,,,,
+corner_kick,ppo,3,200000,,,,

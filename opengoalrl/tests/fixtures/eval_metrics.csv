@@ -1,0 +1,4 @@
+episode,reward,steps,goals,shots,ball_in_box
+1,5.2,120,1,2,1
+2,-1.0,400,0,1,0
+3,0.5,250,0,0,0

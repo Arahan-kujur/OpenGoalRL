@@ -3,15 +3,24 @@
 from __future__ import annotations
 
 import argparse
-import csv
 from pathlib import Path
 
-import numpy as np
-
 from opengoalrl.agents.ppo_agent import PPOAgent
-from opengoalrl.scripts.train import build_env
-from opengoalrl.utils.config_loader import load_config
+from opengoalrl.metrics.tactical import aggregate_tactical
+from opengoalrl.utils.env_factory import build_env
+from opengoalrl.utils.config_loader import load_config, validate_config
 from opengoalrl.utils.logger import get_logger, log_episode
+from opengoalrl.utils.rollout import run_rollouts, summarize_results, write_episode_csv
+
+
+def _wants_tactical(config: dict, cli_metrics: str | None) -> bool:
+    if cli_metrics == "tactical":
+        return True
+    eval_cfg = config.get("evaluation", {})
+    metrics = eval_cfg.get("metrics", [])
+    if isinstance(metrics, str):
+        return metrics == "tactical"
+    return "tactical" in metrics
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -34,9 +43,17 @@ def main(argv: list[str] | None = None) -> None:
         default="models/eval_metrics.csv",
         help="Path to write per-episode CSV",
     )
+    parser.add_argument(
+        "--metrics",
+        type=str,
+        default=None,
+        choices=["basic", "tactical"],
+        help="Metric set to collect (overrides config)",
+    )
     args = parser.parse_args(argv)
 
     config = load_config(args.config)
+    validate_config(config, required_sections=("environment",))
     eval_cfg = config.get("evaluation", {})
     log_cfg = config.get("logging", {})
 
@@ -47,67 +64,39 @@ def main(argv: list[str] | None = None) -> None:
     agent = PPOAgent.load(args.model, env=env)
 
     n_episodes = eval_cfg.get("n_episodes", 10)
-    all_rewards: list[float] = []
-    all_goals: list[int] = []
-    all_steps: list[int] = []
-    all_shots: list[int] = []
-    all_ball_in_box: list[int] = []
+    include_tactical = _wants_tactical(config, args.metrics)
 
-    out = Path(args.output)
-    out.parent.mkdir(parents=True, exist_ok=True)
+    def policy(obs):
+        action, _ = agent.predict(obs)
+        return action
 
-    with open(out, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            "episode", "reward", "steps", "goals", "shots", "ball_in_box",
-        ])
+    results = run_rollouts(
+        env,
+        policy,
+        n_episodes,
+        collect_tactical=include_tactical,
+    )
+    write_episode_csv(results, args.output, include_tactical=include_tactical)
 
-        for ep in range(1, n_episodes + 1):
-            obs, info = env.reset()
-            episode_reward = 0.0
-            episode_goals = 0
-            episode_shots = 0
-            episode_ball_in_box = 0
-            steps = 0
-            terminated = truncated = False
-
-            while not (terminated or truncated):
-                action, _ = agent.predict(obs)
-                obs, reward, terminated, truncated, info = env.step(action)
-                episode_reward += reward
-                steps += 1
-
-                if info.get("score_reward", 0.0) > 0:
-                    episode_goals += 1
-
-                rc = info.get("reward_components", {})
-                for key, val in rc.items():
-                    if "ShotReward" in key and val > 0:
-                        episode_shots += 1
-                    if "BallInBoxReward" in key and val > 0:
-                        episode_ball_in_box += 1
-
-            writer.writerow([
-                ep, episode_reward, steps, episode_goals,
-                episode_shots, episode_ball_in_box,
-            ])
-            log_episode(logger, ep, episode_reward, steps, episode_goals)
-
-            all_rewards.append(episode_reward)
-            all_goals.append(episode_goals)
-            all_steps.append(steps)
-            all_shots.append(episode_shots)
-            all_ball_in_box.append(episode_ball_in_box)
+    summary = summarize_results(results)
+    for ep, result in enumerate(results, 1):
+        log_episode(logger, ep, result.reward, result.steps, result.goals)
 
     logger.info("--- Evaluation Summary (%d episodes) ---", n_episodes)
-    logger.info("Mean reward       : %.2f (+/-%.2f)", np.mean(all_rewards), np.std(all_rewards))
-    logger.info("Total goals       : %d", sum(all_goals))
-    logger.info("Goals scored %%    : %.1f%%", 100 * sum(g > 0 for g in all_goals) / n_episodes)
-    logger.info("Episodes with shot: %.1f%%", 100 * sum(s > 0 for s in all_shots) / n_episodes)
-    logger.info("Ball in box %%     : %.1f%%", 100 * sum(b > 0 for b in all_ball_in_box) / n_episodes)
-    logger.info("Mean steps        : %.1f", np.mean(all_steps))
-    logger.info("Results saved to  : %s", out)
+    logger.info("Mean reward       : %.2f (+/-%.2f)", summary["mean_reward"], summary["std_reward"])
+    logger.info("Total goals       : %d", int(summary["total_goals"]))
+    logger.info("Goals scored %%    : %.1f%%", summary["scoring_rate"])
+    logger.info("Episodes with shot: %.1f%%", summary["shot_rate"])
+    logger.info("Ball in box %%     : %.1f%%", summary["ball_in_box_rate"])
+    logger.info("Mean steps        : %.1f", summary["mean_steps"])
 
+    if include_tactical:
+        tactical_list = [r.tactical for r in results if r.tactical is not None]
+        agg = aggregate_tactical(tactical_list)
+        logger.info("Mean dist advanced: %.3f", agg.get("mean_distance_advanced", 0))
+        logger.info("Mean approx xG    : %.3f", agg.get("mean_approx_xg", 0))
+
+    logger.info("Results saved to  : %s", args.output)
     env.close()
 
 

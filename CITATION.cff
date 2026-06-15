@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use OpenGoalRL in your research, please cite it as below."
+title: "OpenGoalRL: Scenario-based reinforcement learning toolkit for Google Research Football"
+abstract: >-
+  OpenGoalRL decomposes football into structured, repeatable scenarios paired
+  with composable reward shaping, a curriculum learning pipeline, tactical
+  metrics, failure diagnostics, and a reproducible benchmark harness for Google
+  Research Football.
+type: software
+authors:
+  - name: "OpenGoalRL Contributors"
+version: "0.2.0"
+license: MIT
+repository-code: "https://github.com/Arahan-kujur/OpenGoalRL"
+url: "https://github.com/Arahan-kujur/OpenGoalRL"
+keywords:
+  - reinforcement-learning
+  - football
+  - google-research-football
+  - curriculum-learning
+  - reward-shaping
+  - gymnasium
+  - stable-baselines3

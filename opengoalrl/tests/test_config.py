@@ -9,9 +9,11 @@ import pytest
 import yaml
 
 from opengoalrl.utils.config_loader import (
+    ConfigValidationError,
     REWARD_REGISTRY,
     build_reward_components,
     load_config,
+    validate_config,
 )
 from opengoalrl.rewards.ball_position_reward import BallInBoxReward
 from opengoalrl.rewards.shot_reward import ShotReward
@@ -74,3 +76,48 @@ class TestBuildRewardComponents:
         config = {"rewards": [{"type": "goal"}]}
         components = build_reward_components(config)
         assert components[0].weight == 1.0
+
+
+class TestValidateConfig:
+    def test_accepts_existing_single_scenario_shape(self):
+        config = {
+            "environment": {"scenario": "empty_goal", "max_steps": 300, "render": False},
+            "rewards": [{"type": "goal", "weight": 10.0}],
+            "training": {
+                "algorithm": "ppo",
+                "total_timesteps": 1000,
+                "learning_rate": 0.0003,
+                "n_envs": 1,
+                "gamma": 0.99,
+            },
+            "evaluation": {"n_episodes": 2},
+            "metrics": ["goals", "shots"],
+            "report": {"format": "markdown", "outdir": "results/"},
+        }
+        validate_config(config, required_sections=("environment",))
+
+    def test_accepts_existing_curriculum_shape(self):
+        config = {
+            "curriculum": {
+                "stages": [
+                    {"scenario": "empty_goal_close", "max_steps": 200, "timesteps": 500},
+                    {"scenario": "corner_kick", "timesteps": 1000},
+                ]
+            },
+            "rewards": [{"type": "goal"}],
+        }
+        validate_config(config, required_sections=("curriculum",))
+
+    def test_missing_required_section_raises(self):
+        with pytest.raises(ConfigValidationError, match="Missing required"):
+            validate_config({}, required_sections=("environment",))
+
+    def test_unknown_scenario_raises(self):
+        config = {"environment": {"scenario": "unknown"}}
+        with pytest.raises(ConfigValidationError, match="Unknown scenario"):
+            validate_config(config)
+
+    def test_invalid_reward_weight_raises(self):
+        config = {"rewards": [{"type": "goal", "weight": "heavy"}]}
+        with pytest.raises(ConfigValidationError, match="rewards\\[0\\]\\.weight"):
+            validate_config(config)

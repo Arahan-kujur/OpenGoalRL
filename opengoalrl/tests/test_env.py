@@ -15,13 +15,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-try:
-    import gfootball  # noqa: F401
-    HAS_GRF = True
-except ImportError:
-    HAS_GRF = False
-
-pytestmark = pytest.mark.skipif(not HAS_GRF, reason="gfootball not installed")
+pytest.importorskip("gfootball")
 
 from opengoalrl.envs.corner_kick import CornerKickEnv
 from opengoalrl.envs.penalty import PenaltyEnv

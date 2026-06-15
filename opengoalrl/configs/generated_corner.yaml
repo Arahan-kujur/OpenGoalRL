@@ -1,0 +1,27 @@
+environment:
+  scenario_spec:
+    name: generated_corner
+    attackers: 3
+    defenders: 2
+    keeper: true
+    ball_position: [0.8, 0.1]
+    field_region: attacking_third
+    objective: score
+    max_steps: 400
+
+rewards:
+  - type: "goal"
+    weight: 10.0
+  - type: "shot"
+    weight: 2.0
+
+training:
+  total_timesteps: 50000
+  seed: 42
+
+evaluation:
+  n_episodes: 10
+  metrics: tactical
+
+logging:
+  save_dir: "models/generated_corner/"

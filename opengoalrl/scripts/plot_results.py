@@ -44,10 +44,17 @@ def plot_learning_curve(training_csv: Path, out_path: Path) -> None:
 
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.plot(timesteps, rewards, linewidth=1.5, label="PPO (shaped reward)")
+    if "mean_distance_advanced" in data:
+        ax2 = ax.twinx()
+        ax2.plot(
+            timesteps, data["mean_distance_advanced"],
+            color="tab:orange", alpha=0.6, label="Dist advanced",
+        )
+        ax2.set_ylabel("Tactical (dist advanced)")
     ax.set_xlabel("Timesteps")
     ax.set_ylabel("Mean Episode Reward")
     ax.set_title("Training Learning Curve")
-    ax.legend()
+    ax.legend(loc="upper left")
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
@@ -142,12 +149,40 @@ def plot_ablation(ablation_csv: Path, out_path: Path) -> None:
     print(f"Saved ablation chart to {out_path}")
 
 
+def plot_curriculum(curriculum_csv: Path, out_path: Path) -> None:
+    """Learning curve across curriculum stages."""
+    data = _read_csv(curriculum_csv)
+    if "stage" not in data:
+        return
+    fig, ax = plt.subplots(figsize=(9, 5))
+    stages = sorted(set(int(s) for s in data["stage"]))
+    for stage in stages:
+        mask = [int(s) == stage for s in data["stage"]]
+        ts = [data["timestep"][i] for i, m in enumerate(mask) if m]
+        rw = [data["mean_reward"][i] for i, m in enumerate(mask) if m]
+        scenario = next(
+            (data["scenario"][i] for i, m in enumerate(mask) if m),
+            str(stage),
+        )
+        ax.plot(ts, rw, linewidth=1.5, label=f"Stage {stage}: {scenario}")
+    ax.set_xlabel("Timesteps")
+    ax.set_ylabel("Mean Episode Reward")
+    ax.set_title("Curriculum Training Progress")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+    print(f"Saved curriculum chart to {out_path}")
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Plot OpenGoalRL results")
     parser.add_argument("--training", type=str, default="models/training_metrics.csv")
     parser.add_argument("--baseline", type=str, default="models/baseline_metrics.csv")
     parser.add_argument("--eval", type=str, default="models/eval_metrics.csv")
     parser.add_argument("--ablation", type=str, default="models/ablation/ablation_metrics.csv")
+    parser.add_argument("--curriculum", type=str, default="models/curriculum/curriculum_metrics.csv")
     parser.add_argument("--outdir", type=str, default="results/")
     args = parser.parse_args(argv)
 
@@ -158,6 +193,7 @@ def main(argv: list[str] | None = None) -> None:
     baseline_path = Path(args.baseline)
     eval_path = Path(args.eval)
     ablation_path = Path(args.ablation)
+    curriculum_path = Path(args.curriculum)
 
     if training_path.exists():
         plot_learning_curve(training_path, outdir / "learning_curve.png")
@@ -178,6 +214,11 @@ def main(argv: list[str] | None = None) -> None:
         plot_ablation(ablation_path, outdir / "ablation.png")
     else:
         print(f"Ablation CSV not found: {ablation_path}")
+
+    if curriculum_path.exists():
+        plot_curriculum(curriculum_path, outdir / "curriculum.png")
+    else:
+        print(f"Curriculum CSV not found: {curriculum_path}")
 
 
 if __name__ == "__main__":

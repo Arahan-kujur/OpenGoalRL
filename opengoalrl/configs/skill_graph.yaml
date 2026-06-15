@@ -1,0 +1,42 @@
+rewards:
+  - type: "goal"
+    weight: 10.0
+  - type: "shot"
+    weight: 2.0
+  - type: "distance_to_goal"
+    weight: 0.5
+
+training:
+  seed: 42
+
+curriculum:
+  skill_graph:
+    nodes:
+      - id: shoot_close_range
+        scenario: empty_goal_close
+        prerequisites: []
+        timesteps: 50000
+        mastery_threshold:
+          scoring_rate: 30.0
+      - id: run_and_finish
+        scenario: empty_goal
+        prerequisites: [shoot_close_range]
+        timesteps: 100000
+        mastery_threshold:
+          scoring_rate: 25.0
+      - id: beat_defender
+        scenario: run_to_score
+        prerequisites: [run_and_finish]
+        timesteps: 150000
+      - id: corner_kick_finish
+        scenario: corner_kick
+        prerequisites: [beat_defender]
+        timesteps: 200000
+        mastery_threshold:
+          scoring_rate: 10.0
+
+evaluation:
+  n_episodes: 20
+
+logging:
+  save_dir: "models/skill_graph/"

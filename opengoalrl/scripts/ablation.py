@@ -7,11 +7,9 @@ import copy
 import csv
 from pathlib import Path
 
-import numpy as np
-
-from opengoalrl.scripts.train import build_env, _set_seed
 from opengoalrl.agents.ppo_agent import PPOAgent
-from opengoalrl.utils.config_loader import load_config
+from opengoalrl.utils.config_loader import load_config, validate_config
+from opengoalrl.utils.env_factory import build_env, set_seed as _set_seed
 from opengoalrl.utils.logger import get_logger, save_config_snapshot
 from opengoalrl.utils.metrics_callback import MetricsCallback
 
@@ -28,6 +26,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     config = load_config(args.config)
+    validate_config(config, required_sections=("environment", "ablation"))
     train_cfg = config.get("training", {})
     log_cfg = config.get("logging", {})
     variants = config["ablation"]["variants"]

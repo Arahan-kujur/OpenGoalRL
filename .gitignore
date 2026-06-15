@@ -17,6 +17,15 @@ models/
 logs/
 results/
 
+# Keep committed benchmark schema/template/summary (results/ is ignored above)
+!benchmarks/results/
+benchmarks/results/*/
+!benchmarks/results/*.md
+!benchmarks/results/*.csv
+
+# MkDocs build output
+site/
+
 # Artifacts
 *.zip
 *.log

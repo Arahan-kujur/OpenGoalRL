@@ -1,0 +1,33 @@
+# Generated outputs and artifacts
+models/
+logs/
+results/
+site/
+benchmarks/results/*/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# VCS / IDE / OS
+.git/
+.github/
+.vscode/
+.idea/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+Thumbs.db
+
+# Docs build (not needed inside the training image)
+site/

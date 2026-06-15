@@ -6,13 +6,20 @@ import argparse
 import csv
 from pathlib import Path
 
-import numpy as np
-
-from opengoalrl.scripts.train import ENV_REGISTRY, _set_seed, build_env
+from opengoalrl.utils.env_factory import build_env, set_seed as _set_seed
 from opengoalrl.agents.ppo_agent import PPOAgent
-from opengoalrl.utils.config_loader import load_config
+from opengoalrl.curriculum.skill_graph import SkillGraph
+from opengoalrl.utils.config_loader import load_config, validate_config
 from opengoalrl.utils.logger import get_logger, save_config_snapshot
 from opengoalrl.utils.metrics_callback import MetricsCallback
+
+
+def _resolve_stages(config: dict) -> list[dict]:
+    curriculum = config["curriculum"]
+    if "skill_graph" in curriculum:
+        graph = SkillGraph.from_config(curriculum)
+        return graph.to_linear_stages()
+    return curriculum["stages"]
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -27,9 +34,10 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     config = load_config(args.config)
+    validate_config(config, required_sections=("curriculum",))
     train_cfg = config.get("training", {})
     log_cfg = config.get("logging", {})
-    stages = config["curriculum"]["stages"]
+    stages = _resolve_stages(config)
 
     seed = train_cfg.get("seed", 42)
     _set_seed(seed)
